@@ -1,45 +1,46 @@
-# Local RAG Application (Zero Network Calls)
+# 🤖 Local Hybrid RAG Assistant (Zero Network Calls)
 
-This project is a fully local, privacy-first Retrieval-Augmented Generation (RAG) application. It leverages **Microsoft Foundry Local** to run language and embedding models entirely on your device without sending any data to the cloud.
+This project is a fully local, privacy-first Retrieval-Augmented Generation (RAG) application. It leverages **Microsoft Foundry Local SDK** and **sqlite-vec** to run language models and high-performance vector search entirely on your device, ensuring zero data leaves your local environment.
 
-## Features
-- **Zero Network Calls:** After the initial model download, the application works entirely offline. User data never leaves the device.
-- **Cross-Platform:** The Python SDK automatically detects hardware and selects the best execution provider (CPU/GPU/NPU) on Windows, Mac, and Linux.
-- **Local Embeddings:** Uses the `qwen3-embedding-0.6b` model to generate document embeddings locally.
-- **Local Chat:** Uses the `phi-3.5-mini` model for generating responses based on your context.
-- **Serverless Storage:** Utilizes SQLite for storing and retrieving document chunks and vector embeddings seamlessly without extra dependencies.
-- **Streamlit Interface:** A clean, minimal web interface for uploading documents and chatting with your data.
+## ✨ Key Features
+- **Zero Network Architecture:** After the initial model download, the application works entirely offline. Absolute privacy for your sensitive documents.
+- **Advanced Hybrid Search (RRF):** Combines standard semantic Vector Search (`sqlite-vec`) with exact keyword matching via SQLite's Full-Text Search (`FTS5`). Results are intelligently merged using Reciprocal Rank Fusion (RRF).
+- **Semantic Chunking:** Documents are split intelligently based on sentence boundaries, rather than blind character counts, ensuring context is never cut in half.
+- **Dynamic Persona System:** Instantly change the AI's personality and instructions through the UI sidebar (e.g., "Act as a grumpy software architect").
+- **Streaming UI:** Watch the AI type out its answers in real-time (typewriter effect) using a modern **Streamlit** interface.
+- **Database & Memory Management:** Includes UI controls to clear the chat history, view loaded documents, and completely wipe the SQLite database with a single click.
 
-## Architecture
-- **Runtime:** Microsoft Foundry Local
-- **Vector Store:** SQLite (built-in Python `sqlite3` module)
+## 🏗 Architecture & Stack
+- **LLM Runtime:** Microsoft Foundry Local SDK (`phi-3.5-mini`)
+- **Embedding Model:** Sentence-Transformers (`all-MiniLM-L6-v2`)
+- **Vector Store:** SQLite with `sqlite-vec` & `FTS5` Virtual Tables
+- **Frontend:** Streamlit
 - **Language:** Python
-- **UI:** Streamlit
 
-## Setup Instructions
+## 🚀 Setup Instructions
 
-1. **Install Foundry Local CLI:**
-   Follow the official Microsoft documentation to install the Foundry Local CLI on your machine.
-
-2. **Download the Models:**
-   Open your terminal and run the following commands to cache the models locally:
-   ```bash
-   foundry model run phi-3.5-mini
-   foundry model download qwen3-embedding-0.6b
-   ```
-
-3. **Install Python Dependencies:**
+1. **Install Dependencies:**
+   Ensure you are using your virtual environment (`venv`), then install the required packages:
    ```bash
    pip install -r requirements.txt
    ```
+   *(Note: This project relies on `sqlite-vec`, `sentence-transformers`, `streamlit`, and `pypdf`)*
 
-4. **Run the Application:**
+2. **Run the Application:**
+   Start the Streamlit application:
    ```bash
-   streamlit run main.py
+   python -m streamlit run app.py
    ```
 
-## Limitations
-- Brute-force cosine similarity is used for vector search, which is suitable for smaller-scale document collections.
+3. **Using the App:**
+   - Upload a PDF or TXT file via the sidebar.
+   - Wait for the Hybrid Indexing process to complete.
+   - Set a custom Persona if desired.
+   - Ask questions and see how the AI retrieves hybrid-scored context!
 
-## License
+## 📌 Troubleshooting
+- **ModuleNotFoundError:** Ensure you are running the `python -m streamlit` command from *within* your activated `venv`.
+- **Foundry SDK Singleton Error:** If you encounter `FoundryLocalException` during Streamlit's Hot Reload, simply refresh the web page (F5). The backend handles this gracefully.
+
+## 📄 License
 [MIT](LICENSE)

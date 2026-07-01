@@ -1,5 +1,5 @@
-# pyrefly: ignore [missing-import]
 import sqlite3
+# pyrefly: ignore [missing-import]
 import sqlite_vec
 import struct
 from typing import List
