@@ -1,5 +1,8 @@
 # 🤖 Local Hybrid RAG Assistant (Zero Network Calls)
 
+> **🌟 Microsoft AI Innovators Summer Internship Project**  
+> *Developed by Şevval Arslan*
+
 This project is a fully local, privacy-first Retrieval-Augmented Generation (RAG) application. It leverages **Microsoft Foundry Local SDK** and **sqlite-vec** to run language models and high-performance vector search entirely on your device, ensuring zero data leaves your local environment.
 
 ## ✨ Key Features
