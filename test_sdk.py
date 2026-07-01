@@ -1,4 +1,5 @@
 import os
+# pyrefly: ignore [missing-import]
 from foundry_local_sdk import Configuration, FoundryLocalManager
 
 def main():

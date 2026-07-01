@@ -11,6 +11,11 @@ env/
 # SQLite databases
 *.db
 *.sqlite3
+*.sqlite
+rag_database.sqlite
 
 # Streamlit
 .streamlit/
+
+# Uploaded Files
+uploads/
