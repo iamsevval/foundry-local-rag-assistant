@@ -1,0 +1,16 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.env
+
+# SQLite databases
+*.db
+*.sqlite3
+
+# Streamlit
+.streamlit/
