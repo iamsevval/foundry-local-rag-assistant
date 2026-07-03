@@ -16,7 +16,7 @@ if "messages" not in st.session_state:
 # Yan menü: PDF yükleme, Ayarlar, Veritabanı Yönetimi
 with st.sidebar:
     st.header("📂 Dosya Yükle")
-    uploaded_file = st.file_uploader("PDF veya TXT seçin", type=["pdf", "txt"])
+    uploaded_file = st.file_uploader("PDF, DOCX veya TXT seçin", type=["pdf", "docx", "txt"])
     
     if st.button("Veritabanına Ekle"):
         if uploaded_file is not None:

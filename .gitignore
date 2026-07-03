@@ -19,3 +19,6 @@ rag_database.sqlite
 
 # Uploaded Files
 uploads/
+
+# macOS
+.DS_Store

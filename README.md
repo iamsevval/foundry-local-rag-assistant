@@ -7,6 +7,7 @@ This project is a fully local, privacy-first Retrieval-Augmented Generation (RAG
 
 ## ✨ Key Features
 - **Zero Network Architecture:** After the initial model download, the application works entirely offline. Absolute privacy for your sensitive documents.
+- **Cross-Platform Hardware Awareness:** Foundry Local automatically detects your device's hardware and selects the best execution provider (automatic CPU/GPU/NPU selection on Windows, Mac, and Linux).
 - **Advanced Hybrid Search (RRF):** Combines standard semantic Vector Search (`sqlite-vec`) with exact keyword matching via SQLite's Full-Text Search (`FTS5`). Results are intelligently merged using Reciprocal Rank Fusion (RRF).
 - **Semantic Chunking:** Documents are split intelligently based on sentence boundaries, rather than blind character counts, ensuring context is never cut in half.
 - **Dynamic Persona System:** Instantly change the AI's personality and instructions through the UI sidebar (e.g., "Act as a grumpy software architect").
@@ -14,6 +15,25 @@ This project is a fully local, privacy-first Retrieval-Augmented Generation (RAG
 - **Database & Memory Management:** Includes UI controls to clear the chat history, view loaded documents, and completely wipe the SQLite database with a single click.
 
 ## 🏗 Architecture & Stack
+
+```mermaid
+graph TD
+    A[User Query] --> B[Streamlit UI]
+    B --> C{Hybrid Search}
+    C -->|Vector Similarity| D[(SQLite vec0)]
+    C -->|Keyword Match| E[(SQLite FTS5)]
+    D --> F[Reciprocal Rank Fusion]
+    E --> F
+    F --> G[Context Assembly]
+    G --> H[Foundry SDK - phi-3.5-mini]
+    H --> I[Streamed Response to User]
+    
+    J[PDF/DOCX/TXT] --> K[Semantic Chunking & Overlap]
+    K --> L[Foundry SDK - Embeddings]
+    L --> D
+    K --> E
+```
+
 - **LLM Runtime:** Microsoft Foundry Local SDK (`phi-3.5-mini`)
 - **Embedding Model:** Sentence-Transformers (`all-MiniLM-L6-v2`)
 - **Vector Store:** SQLite with `sqlite-vec` & `FTS5` Virtual Tables
