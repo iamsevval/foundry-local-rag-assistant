@@ -161,3 +161,26 @@ def get_loaded_documents() -> List[str]:
     docs = [row[0] for row in cursor.fetchall()]
     db.close()
     return docs
+
+def delete_document_by_name(source: str) -> int:
+    """Belirli bir dosyanın tüm parçalarını veritabanından siler."""
+    db = init_db()
+    cursor = db.cursor()
+    
+    cursor.execute("SELECT id FROM documents WHERE source = ?", (source,))
+    rows = cursor.fetchall()
+    
+    if not rows:
+        db.close()
+        return 0
+        
+    ids = [r[0] for r in rows]
+    placeholders = ','.join('?' for _ in ids)
+    
+    cursor.execute(f"DELETE FROM vec_documents WHERE id IN ({placeholders})", ids)
+    cursor.execute(f"DELETE FROM fts_documents WHERE id IN ({placeholders})", ids)
+    cursor.execute("DELETE FROM documents WHERE source = ?", (source,))
+    
+    db.commit()
+    db.close()
+    return len(ids)

@@ -43,7 +43,7 @@ with st.sidebar:
     st.header("🎭 Asistan Karakteri")
     persona_input = st.text_area(
         "Modelin nasıl davranmasını istiyorsunuz?", 
-        value="Sen güvenilir, yerel ve gizlilik odaklı bir AI asistanısın. Sana sağlanan BAĞLAM metnini kullanarak kullanıcının sorusunu cevapla. Cevap BAĞLAM'da yoksa sadece 'Bilmiyorum' de.",
+        value="Sen anlamsal çıkarım (semantic reasoning) yeteneği yüksek bir AI asistanısın. Kullanıcının sorusunu cevaplamadan önce BAĞLAM metnini adım adım analiz et. Kavramları eşleştir (örneğin 'kriz', 'aksaklık' veya 'problem' benzer şeylerdir). Metinde olmayan isimleri/olayları ASLA uydurma, ancak var olan bilgileri eşanlamlılarıyla mantıklı bir şekilde yorumla. Cevap bağlamda yoksa 'Bilmiyorum' de.",
         height=150
     )
 
@@ -57,7 +57,14 @@ with st.sidebar:
         if loaded_docs:
             st.write("**Yüklü Dosyalar:**")
             for doc in loaded_docs:
-                st.caption(f"- {doc}")
+                col_doc, col_btn = st.columns([3, 1])
+                with col_doc:
+                    display_name = doc if len(doc) < 25 else doc[:22] + "..."
+                    st.write(f"📄 {display_name}")
+                with col_btn:
+                    if st.button("Sil", key=f"del_{doc}", help="Dosyayı sil"):
+                        rag_core.delete_document(doc)
+                        st.rerun()
         else:
             st.write("*Veritabanı şu an boş.*")
     except Exception:
@@ -80,10 +87,13 @@ with st.sidebar:
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
+        if "rewritten_query" in message and message["rewritten_query"]:
+            st.info(f"✍️ Düzeltilen Sorgu: {message['rewritten_query']}")
         if "sources" in message and message["sources"]:
-            with st.expander("Kaynaklar (Hibrit Skorlu)"):
+            with st.expander("Kullanılan Kaynaklar (Re-rank Skorlu)"):
                 for src in message["sources"]:
-                    st.caption(f"**{src['source']}** - (RRF Skoru: {src['distance']:.4f})\n\n{src['content']}")
+                    score = src.get('cross_encoder_score', 0)
+                    st.caption(f"**{src['source']}** - (Skor: {score:.4f})\n\n{src['content']}")
 
 # Yeni Soru Girişi
 if prompt := st.chat_input("Sorunuzu buraya yazın..."):
@@ -91,9 +101,16 @@ if prompt := st.chat_input("Sorunuzu buraya yazın..."):
         st.markdown(prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})
     
-    # RAG: Veritabanında ara (Hibrit: FTS5 + Vec)
-    with st.spinner("Vektör ve Kelime aramaları harmanlanıyor..."):
-        results = rag_core.retrieve_context(prompt, top_k=7)
+    # RAG: Veritabanında ara
+    st.status("Arama Tamamlandı!", state="complete")
+    with st.spinner("Soru zenginleştiriliyor ve veritabanı taranıyor..."):
+        results = rag_core.retrieve_context(st.session_state.messages, prompt, top_k=7)
+        
+    rewritten = results[0]['rewritten_query'] if results and 'rewritten_query' in results[0] else None
+    if rewritten and rewritten != prompt:
+        st.info(f"✍️ Düzeltilen Sorgu: {rewritten}")
+        
+    st.caption("Sonuçlar Cross-Encoder ile yeniden sıralandı.")
         
     context_str = ""
     for i, r in enumerate(results):
@@ -103,26 +120,31 @@ if prompt := st.chat_input("Sorunuzu buraya yazın..."):
         message_placeholder = st.empty()
         full_response = ""
         
-        # Seçilen Persona ile akıcı cevap üret
-        stream = rag_core.generate_answer_stream(
-            st.session_state.messages, 
-            context=context_str, 
-            custom_persona=persona_input
-        )
-        
-        for chunk in stream:
-            full_response += chunk
-            message_placeholder.markdown(full_response + "▌")
+        if not results:
+            full_response = "Bilmiyorum. (Veritabanında eşleşen hiçbir bilgi bulunamadı veya hiç dosya yüklemediniz.)"
+            message_placeholder.markdown(full_response)
+        else:
+            # Seçilen Persona ile akıcı cevap üret
+            stream = rag_core.generate_answer_stream(
+                st.session_state.messages, 
+                context=context_str, 
+                custom_persona=persona_input
+            )
             
-        message_placeholder.markdown(full_response)
-        
-        if results:
-            with st.expander("Kullanılan Kaynaklar (Hibrit Skorlu)"):
+            for chunk in stream:
+                full_response += chunk
+                message_placeholder.markdown(full_response + "▌")
+                
+            message_placeholder.markdown(full_response)
+            
+            with st.expander("Kullanılan Kaynaklar (Re-rank Skorlu)"):
                 for r in results:
-                    st.caption(f"**Dosya:** {r['source']} (RRF Skoru: {r['distance']:.4f})\n> {r['content']}")
+                    score = r.get('cross_encoder_score', 0)
+                    st.caption(f"**Dosya:** {r['source']} (Skor: {score:.4f})\n> {r['content']}")
                     
     st.session_state.messages.append({
         "role": "assistant", 
         "content": full_response,
-        "sources": results
+        "sources": results,
+        "rewritten_query": rewritten if rewritten != prompt else None
     })

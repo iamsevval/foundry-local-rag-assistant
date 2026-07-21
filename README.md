@@ -1,30 +1,36 @@
-# 🤖 Local Hybrid RAG Assistant (Zero Network Calls)
+# 🤖 Advanced Local Hybrid RAG Assistant (Zero Network Calls)
 
 > **🌟 Microsoft AI Innovators Summer Internship Project**  
 > *Developed by Şevval Arslan*
 
-This project is a fully local, privacy-first Retrieval-Augmented Generation (RAG) application. It leverages **Microsoft Foundry Local SDK** and **sqlite-vec** to run language models and high-performance vector search entirely on your device, ensuring zero data leaves your local environment.
+This project is a fully local, privacy-first, **Advanced Retrieval-Augmented Generation (RAG)** application. It leverages **Microsoft Foundry Local SDK**, **sqlite-vec**, and an enterprise-grade **Multi-Stage Retrieval Pipeline** to run language models and high-performance vector searches entirely on your device, ensuring zero data leaves your local environment.
 
 ## ✨ Key Features
+
 - **Zero Network Architecture:** After the initial model download, the application works entirely offline. Absolute privacy for your sensitive documents.
 - **Cross-Platform Hardware Awareness:** Foundry Local automatically detects your device's hardware and selects the best execution provider (automatic CPU/GPU/NPU selection on Windows, Mac, and Linux).
-- **Advanced Hybrid Search (RRF):** Combines standard semantic Vector Search (`sqlite-vec`) with exact keyword matching via SQLite's Full-Text Search (`FTS5`). Results are intelligently merged using Reciprocal Rank Fusion (RRF).
-- **Semantic Chunking:** Documents are split intelligently based on sentence boundaries, rather than blind character counts, ensuring context is never cut in half.
-- **Dynamic Persona System:** Instantly change the AI's personality and instructions through the UI sidebar (e.g., "Act as a grumpy software architect").
-- **Streaming UI:** Watch the AI type out its answers in real-time (typewriter effect) using a modern **Streamlit** interface.
-- **Database & Memory Management:** Includes UI controls to clear the chat history, view loaded documents, and completely wipe the SQLite database with a single click.
+- **Multi-Stage Retrieval Pipeline:**
+  1. **Query Rewriting:** Uses the local LLM (`phi-3.5-mini`) to dynamically rewrite incomplete or contextless user questions into standalone, searchable queries based on chat history.
+  2. **Advanced Hybrid Search (RRF):** Combines standard semantic Vector Search (`sqlite-vec` + `all-MiniLM-L6-v2`) with exact keyword matching via SQLite's Full-Text Search (`FTS5`). Results are intelligently merged using Reciprocal Rank Fusion (RRF).
+  3. **Cross-Encoder Re-Ranking:** The retrieved candidates from the hybrid search are passed through a highly accurate Cross-Encoder (`ms-marco-MiniLM-L-6-v2`) for semantic re-ranking, ensuring only the most relevant context is fed to the LLM.
+- **Prompt Engineering & Semantic Reasoning:** Implements "Chain of Thought" (CoT) system prompting to give smaller models (like Phi-3.5) powerful logical deduction capabilities, linking synonyms (e.g., "crisis" = "setback") while strictly preventing hallucinations.
+- **Context-Collapse Protection:** The system intelligently short-circuits LLM generation if no relevant documents are found, preventing edge-case hallucinations (like the model speaking random languages when the database is empty).
+- **Dynamic Database Management:** Delete the entire database or drop specific files instantly directly from the UI.
+- **Streaming UI:** Watch the AI type out its answers in real-time using a modern **Streamlit** interface, complete with expandable source citations and re-rank scores.
 
 ## 🏗 Architecture & Stack
 
 ```mermaid
 graph TD
     A[User Query] --> B[Streamlit UI]
-    B --> C{Hybrid Search}
-    C -->|Vector Similarity| D[(SQLite vec0)]
+    B --> Q[LLM Query Rewriter]
+    Q --> C{Hybrid Search}
+    C -->|Bi-Encoder Similarity| D[(SQLite vec0)]
     C -->|Keyword Match| E[(SQLite FTS5)]
     D --> F[Reciprocal Rank Fusion]
     E --> F
-    F --> G[Context Assembly]
+    F --> R[Cross-Encoder Re-Ranking]
+    R --> G[Context Assembly]
     G --> H[Foundry SDK - phi-3.5-mini]
     H --> I[Streamed Response to User]
     
@@ -35,7 +41,8 @@ graph TD
 ```
 
 - **LLM Runtime:** Microsoft Foundry Local SDK (`phi-3.5-mini`)
-- **Embedding Model:** Sentence-Transformers (`all-MiniLM-L6-v2`)
+- **Embedding Model (Bi-Encoder):** Sentence-Transformers (`all-MiniLM-L6-v2`)
+- **Re-Ranking Model (Cross-Encoder):** Sentence-Transformers (`cross-encoder/ms-marco-MiniLM-L-6-v2`)
 - **Vector Store:** SQLite with `sqlite-vec` & `FTS5` Virtual Tables
 - **Frontend:** Streamlit
 - **Language:** Python
@@ -47,7 +54,6 @@ graph TD
    ```bash
    pip install -r requirements.txt
    ```
-   *(Note: This project relies on `sqlite-vec`, `sentence-transformers`, `streamlit`, and `pypdf`)*
 
 2. **Run the Application:**
    Start the Streamlit application:
@@ -58,8 +64,8 @@ graph TD
 3. **Using the App:**
    - Upload a PDF or TXT file via the sidebar.
    - Wait for the Hybrid Indexing process to complete.
-   - Set a custom Persona if desired.
-   - Ask questions and see how the AI retrieves hybrid-scored context!
+   - You can delete individual files via the trash icon next to them in the sidebar.
+   - Ask follow-up questions and watch the AI dynamically rewrite them, retrieve hybrid context, re-rank it with the Cross-Encoder, and stream the answer!
 
 ## 📌 Troubleshooting
 - **ModuleNotFoundError:** Ensure you are running the `python -m streamlit` command from *within* your activated `venv`.
