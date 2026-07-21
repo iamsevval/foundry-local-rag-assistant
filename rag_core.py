@@ -1,4 +1,6 @@
 import os
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
 # pyrefly: ignore [missing-import]
 from foundry_local_sdk import Configuration, FoundryLocalManager
 from sentence_transformers import SentenceTransformer, CrossEncoder

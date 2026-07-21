@@ -164,7 +164,7 @@ with tab_graph:
     if not edges:
         st.info("Henüz ağ haritası oluşturulamadı. Lütfen yeni bir PDF yükleyin. Model ilk kısımları analiz ederek varlıkları çekecektir.")
     else:
-        net = Network(height="600px", width="100%", bgcolor="#0e1117", font_color="white", directed=True)
+        net = Network(height="600px", width="100%", bgcolor="#0e1117", font_color="white", directed=True, cdn_resources="in_line")
         # Varlıkları ve kenarları ekle
         for edge in edges:
             src = edge.get("source_node", "Bilinmeyen")
