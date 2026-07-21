@@ -24,20 +24,23 @@ with st.sidebar:
     if st.button("Veritabanına Ekle"):
         if uploaded_file is not None:
             with st.spinner("Dosya işleniyor (Hibrit İndeksleniyor)..."):
-                ext = uploaded_file.name.split('.')[-1]
-                with tempfile.NamedTemporaryFile(delete=False, suffix=f".{ext}") as tmp:
-                    tmp.write(uploaded_file.getvalue())
-                    tmp_path = tmp.name
-                
-                target_dir = os.path.join(os.getcwd(), "uploads")
-                os.makedirs(target_dir, exist_ok=True)
-                final_path = os.path.join(target_dir, uploaded_file.name)
-                
-                with open(final_path, "wb") as f:
-                    f.write(uploaded_file.getvalue())
-                
-                chunk_count = rag_core.process_and_store_document(final_path)
-                st.success(f"Başarılı! '{uploaded_file.name}' dosyasından {chunk_count} parça SQLite veritabanına indekslendi.")
+                try:
+                    ext = uploaded_file.name.split('.')[-1]
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=f".{ext}") as tmp:
+                        tmp.write(uploaded_file.getvalue())
+                        tmp_path = tmp.name
+                    
+                    target_dir = os.path.join(os.getcwd(), "uploads")
+                    os.makedirs(target_dir, exist_ok=True)
+                    final_path = os.path.join(target_dir, uploaded_file.name)
+                    
+                    with open(final_path, "wb") as f:
+                        f.write(uploaded_file.getvalue())
+                    
+                    chunk_count = rag_core.process_and_store_document(final_path)
+                    st.success(f"Başarılı! '{uploaded_file.name}' dosyasından {chunk_count} parça SQLite veritabanına indekslendi.")
+                except Exception as e:
+                    st.error(f"Dosya yüklenirken bir hata oluştu: {str(e)}")
         else:
             st.warning("Lütfen bir dosya seçin.")
 
@@ -110,7 +113,11 @@ with tab_chat:
         # RAG: Veritabanında ara
         st.status("Arama Tamamlandı!", state="complete")
         with st.spinner("Soru zenginleştiriliyor ve veritabanı taranıyor..."):
-            results = rag_core.retrieve_context(st.session_state.messages, prompt, top_k=7)
+            try:
+                results = rag_core.retrieve_context(st.session_state.messages, prompt, top_k=7)
+            except Exception as e:
+                st.error(f"Veritabanında arama yapılırken hata oluştu: {str(e)}")
+                results = []
             
         rewritten = results[0]['rewritten_query'] if results and 'rewritten_query' in results[0] else None
         if rewritten and rewritten != prompt:
@@ -130,23 +137,26 @@ with tab_chat:
                 full_response = "Bilmiyorum. (Veritabanında eşleşen hiçbir bilgi bulunamadı veya hiç dosya yüklemediniz.)"
                 message_placeholder.markdown(full_response)
             else:
-                # Seçilen Persona ile akıcı cevap üret
-                stream = rag_core.generate_answer_stream(
-                    st.session_state.messages, 
-                    context=context_str, 
-                    custom_persona=persona_input
-                )
-                
-                for chunk in stream:
-                    full_response += chunk
-                    message_placeholder.markdown(full_response + "▌")
+                try:
+                    # Seçilen Persona ile akıcı cevap üret
+                    stream = rag_core.generate_answer_stream(
+                        st.session_state.messages, 
+                        context=context_str, 
+                        custom_persona=persona_input
+                    )
                     
-                message_placeholder.markdown(full_response)
-                
-                with st.expander("Kullanılan Kaynaklar (Re-rank Skorlu)"):
-                    for r in results:
-                        score = r.get('cross_encoder_score', 0)
-                        st.caption(f"**Dosya:** {r['source']} (Skor: {score:.4f})\n> {r['content']}")
+                    for chunk in stream:
+                        full_response += chunk
+                        message_placeholder.markdown(full_response + "▌")
+                        
+                    message_placeholder.markdown(full_response)
+                    
+                    with st.expander("Kullanılan Kaynaklar (Re-rank Skorlu)"):
+                        for r in results:
+                            score = r.get('cross_encoder_score', 0)
+                            st.caption(f"**Dosya:** {r['source']} (Skor: {score:.4f})\n> {r['content']}")
+                except Exception as e:
+                    st.error(f"Cevap üretilirken yapay zeka hatası oluştu: {str(e)}")
                         
         st.session_state.messages.append({
             "role": "assistant", 

@@ -76,9 +76,37 @@ graph TD
    - **Chat Tab:** Ask follow-up questions and watch the AI dynamically rewrite them, retrieve hybrid context, re-rank it, and stream the answer.
    - **Graph Tab:** Explore the interactive knowledge graph to visually understand the entities and relationships discovered in your documents.
 
+## 🧪 Test Results (Final Week)
+
+To ensure robustness, the application was tested against three critical categories:
+
+1. **In-Domain Questions (Accuracy & Retrieval):**
+   - *Query:* "DermaSmart projesinde karşılaşılan veri sızıntısı sorunu nasıl çözüldü?"
+   - *Result:* **PASS**. The Hybrid search successfully retrieved the exact document chunk containing the solution, and the Phi-3.5 model summarized it accurately without hallucination.
+
+2. **Out-of-Domain Questions (Hallucination & Guardrails):**
+   - *Query:* "Bana çikolatalı kek tarifi verebilir misin?" / "Microsoft'un anlık hisse senedi değeri nedir?"
+   - *Result:* **PASS**. Thanks to Context-Collapse Protection, the system detected 0 relevant chunks and gracefully responded with: *"Bilmiyorum. (Veritabanında eşleşen hiçbir bilgi bulunamadı...)"*.
+
+3. **Edge Cases (Query Rewriter & Parsing):**
+   - *Query:* "şey", " " (empty string), "ne?"
+   - *Result:* **PASS**. The Query Rewriter safely ignored single-word non-contextual noise or returned the original string. The Hard-Stop mechanism correctly blocked generation due to lack of context.
+
+## 🔌 Offline Proof (Zero Network)
+
+This project strictly adheres to the **"Zero Network Calls"** philosophy. 
+- **The Wi-Fi Disconnection Test:** During final validation, the host machine's Wi-Fi interface was completely disabled. 
+- **Result:** The application booted flawlessly. `SentenceTransformers` loaded from the local cache (bypassing HF Hub metadata checks via `HF_HUB_OFFLINE=1`), `Foundry Local` utilized the NPU/GPU without internet, and `PyVis` rendered the interactive 3D Graph-RAG perfectly using inline injected scripts (`cdn_resources="in_line"`). 
+- **Conclusion:** 100% Data Privacy is guaranteed. No data leaves the machine.
+
+## ⚠️ Limitations
+- **Supported File Types:** Currently limited to `.pdf`, `.docx`, and `.txt`.
+- **Performance Constraints:** Processing extremely large documents (e.g., 500+ pages) may take several minutes depending on your device's local CPU/GPU/NPU speed, as embedding and entity extraction run purely locally.
+
 ## 📌 Troubleshooting
-- **ModuleNotFoundError:** Ensure you are running the `python -m streamlit` command from *within* your activated `venv`.
+- **ModuleNotFoundError:** Ensure you are running the `python -m streamlit` command from *within* your activated `venv` after running `pip install -r requirements.txt`.
 - **Foundry SDK Singleton Error:** If you encounter `FoundryLocalException` during Streamlit's Hot Reload, simply refresh the web page (F5). The backend handles this gracefully.
+- **Model Load Failures:** If the models fail to load offline, ensure you have connected to the internet *at least once* so the models can be cached locally.
 
 ## 📄 License
 [MIT](LICENSE)

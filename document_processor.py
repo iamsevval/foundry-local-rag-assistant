@@ -58,14 +58,17 @@ def process_and_chunk_file(file_path: str) -> List[str]:
     """Dosyayı okur ve parçalara (chunks) böler."""
     ext = os.path.splitext(file_path)[1].lower()
     
-    if ext == ".pdf":
-        text = extract_text_from_pdf(file_path)
-    elif ext == ".docx":
-        text = extract_text_from_docx(file_path)
-    elif ext == ".txt":
-        with open(file_path, "r", encoding="utf-8") as f:
-            text = f.read()
-    else:
-        raise ValueError(f"Desteklenmeyen dosya formatı: {ext}")
-        
-    return semantic_chunking(text)
+    try:
+        if ext == ".pdf":
+            text = extract_text_from_pdf(file_path)
+        elif ext == ".docx":
+            text = extract_text_from_docx(file_path)
+        elif ext == ".txt":
+            with open(file_path, "r", encoding="utf-8") as f:
+                text = f.read()
+        else:
+            raise ValueError(f"Desteklenmeyen dosya formatı: {ext}")
+            
+        return semantic_chunking(text)
+    except Exception as e:
+        raise RuntimeError(f"Dosya okuma hatası ({os.path.basename(file_path)}): {str(e)}")

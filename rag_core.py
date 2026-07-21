@@ -15,28 +15,31 @@ _cross_encoder = None
 def init_systems():
     """Modelleri ve DB'yi başlatır."""
     global _chat_model, _embedding_model, _cross_encoder
-    if _chat_model is None:
-        print("Chat Modeli (phi-3.5) yükleniyor...")
-        cache_dir = os.path.expanduser("~/.foundry/cache/models")
-        config = Configuration(app_name="rag_assistant", model_cache_dir=cache_dir)
-        
-        if FoundryLocalManager.instance is None:
-            FoundryLocalManager.initialize(config)
+    try:
+        if _chat_model is None:
+            print("Chat Modeli (phi-3.5) yükleniyor...")
+            cache_dir = os.path.expanduser("~/.foundry/cache/models")
+            config = Configuration(app_name="rag_assistant", model_cache_dir=cache_dir)
             
-        manager = FoundryLocalManager.instance
-        chat_model = manager.catalog.get_model("phi-3.5-mini")
-        chat_model.load()
-        _chat_model = chat_model
-        
-    if _embedding_model is None:
-        print("Embedding Modeli (all-MiniLM-L6-v2) yükleniyor...")
-        _embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-        
-    if _cross_encoder is None:
-        print("Cross-Encoder Modeli (ms-marco-MiniLM-L-6-v2) yükleniyor...")
-        _cross_encoder = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
-        
-    vector_db.init_db()
+            if FoundryLocalManager.instance is None:
+                FoundryLocalManager.initialize(config)
+                
+            manager = FoundryLocalManager.instance
+            chat_model = manager.catalog.get_model("phi-3.5-mini")
+            chat_model.load()
+            _chat_model = chat_model
+            
+        if _embedding_model is None:
+            print("Embedding Modeli (all-MiniLM-L6-v2) yükleniyor...")
+            _embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+            
+        if _cross_encoder is None:
+            print("Cross-Encoder Modeli (ms-marco-MiniLM-L-6-v2) yükleniyor...")
+            _cross_encoder = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
+            
+        vector_db.init_db()
+    except Exception as e:
+        raise RuntimeError(f"Yapay zeka modelleri veya veritabanı başlatılamadı. Hata: {str(e)}")
 
 def process_and_store_document(file_path: str):
     """Dokümanı parçalar, vektörleştirir ve SQLite'a kaydeder."""
