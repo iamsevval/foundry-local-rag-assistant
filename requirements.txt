@@ -1,2 +1,4 @@
 foundry-local-sdk
 sentence-transformers==3.0.1
+pyvis==0.3.2
+networkx==3.1

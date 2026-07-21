@@ -4,6 +4,7 @@ from foundry_local_sdk import Configuration, FoundryLocalManager
 from sentence_transformers import SentenceTransformer, CrossEncoder
 import vector_db
 import document_processor
+import json
 
 _chat_model = None
 _embedding_model = None
@@ -42,11 +43,53 @@ def process_and_store_document(file_path: str):
     print(f"{file_name} işleniyor...")
     
     chunks = document_processor.process_and_chunk_file(file_path)
-    for chunk in chunks:
+    for i, chunk in enumerate(chunks):
         emb = _embedding_model.encode([chunk])[0].tolist()
         vector_db.insert_chunk(file_name, chunk, emb)
         
+        # Sadece ilk 3 chunk için graf çıkar (performans için)
+        if i < 3:
+            extract_entities_from_chunk(chunk, file_name)
+        
     return len(chunks)
+
+def extract_entities_from_chunk(chunk: str, file_name: str):
+    """Metin parçasından JSON formatında varlık ve ilişkileri çıkarır."""
+    init_systems()
+    
+    system_prompt = (
+        "Sen bir veri madenciliği asistanısın. Görevin verilen metinden kişi, kurum, proje, teknoloji veya olayları bulmak ve aralarındaki ilişkiyi sadece JSON formatında çıkarmaktır. "
+        "Metin dışından HİÇBİR ŞEY uydurma. "
+        "Çıktı KESİNLİKLE şu formatta, köşeli parantez içinde bir liste olmalıdır:\\n"
+        '[\\n  {"source_node": "A kişisi", "target_node": "B projesi", "relation": "geliştirdi"}\\n]'
+    )
+    
+    user_prompt = f"Metin:\\n{chunk}\\n\\nSadece JSON listesi:"
+    
+    client = _chat_model.get_chat_client()
+    response = client.complete_chat([
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt}
+    ])
+    
+    output = response.choices[0].message.content.strip()
+    
+    edges = []
+    try:
+        if "```json" in output:
+            output = output.split("```json")[1].split("```")[0].strip()
+        elif "```" in output:
+            output = output.split("```")[1].split("```")[0].strip()
+            
+        start_idx = output.find("[")
+        end_idx = output.rfind("]")
+        if start_idx != -1 and end_idx != -1:
+            json_str = output[start_idx:end_idx+1]
+            edges = json.loads(json_str)
+            if isinstance(edges, list):
+                vector_db.insert_graph_edges(edges, file_name)
+    except Exception as e:
+        print(f"JSON Parse Hatası (GraphRAG): {e}")
 
 def rewrite_query(messages, original_query: str) -> str:
     """Sohbet geçmişine bakarak bağlamı kopuk soruları tek bir anlamlı soruya dönüştürür."""

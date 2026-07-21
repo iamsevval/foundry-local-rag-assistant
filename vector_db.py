@@ -26,6 +26,17 @@ def init_db():
         );
     """)
     
+    # Graph Edges tablosu
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS graph_edges (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            source_node TEXT,
+            target_node TEXT,
+            relation TEXT,
+            document TEXT
+        );
+    """)
+    
     # sqlite-vec Vektör tablosu (virtual table)
     db.execute("""
         CREATE VIRTUAL TABLE IF NOT EXISTS vec_documents USING vec0(
@@ -148,6 +159,7 @@ def clear_database():
     cursor.execute("DELETE FROM documents")
     cursor.execute("DELETE FROM vec_documents")
     cursor.execute("DELETE FROM fts_documents")
+    cursor.execute("DELETE FROM graph_edges")
     db.commit()
     cursor.execute("VACUUM")
     db.commit()
@@ -180,7 +192,42 @@ def delete_document_by_name(source: str) -> int:
     cursor.execute(f"DELETE FROM vec_documents WHERE id IN ({placeholders})", ids)
     cursor.execute(f"DELETE FROM fts_documents WHERE id IN ({placeholders})", ids)
     cursor.execute("DELETE FROM documents WHERE source = ?", (source,))
+    cursor.execute("DELETE FROM graph_edges WHERE document = ?", (source,))
     
     db.commit()
     db.close()
     return len(ids)
+
+def insert_graph_edges(edges: List[dict], document: str):
+    """LLM'den çıkan varlık ilişkilerini veritabanına kaydeder."""
+    db = init_db()
+    cursor = db.cursor()
+    for edge in edges:
+        source_node = edge.get("source_node")
+        target_node = edge.get("target_node")
+        relation = edge.get("relation")
+        if source_node and target_node and relation:
+            cursor.execute(
+                "INSERT INTO graph_edges (source_node, target_node, relation, document) VALUES (?, ?, ?, ?)",
+                (source_node, target_node, relation, document)
+            )
+    db.commit()
+    db.close()
+
+def get_all_graph_edges() -> List[dict]:
+    """Sistemdeki tüm ağ ilişkilerini döndürür."""
+    db = init_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT source_node, target_node, relation, document FROM graph_edges")
+    rows = cursor.fetchall()
+    db.close()
+    
+    results = []
+    for r in rows:
+        results.append({
+            "source_node": r[0],
+            "target_node": r[1],
+            "relation": r[2],
+            "document": r[3]
+        })
+    return results
