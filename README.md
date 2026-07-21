@@ -81,15 +81,15 @@ graph TD
 To ensure robustness, the application was tested against three critical categories:
 
 1. **In-Domain Questions (Accuracy & Retrieval):**
-   - *Query:* "DermaSmart projesinde karşılaşılan veri sızıntısı sorunu nasıl çözüldü?"
+   - *Query:* "How was the data leakage issue encountered in the DermaSmart project resolved?"
    - *Result:* **PASS**. The Hybrid search successfully retrieved the exact document chunk containing the solution, and the Phi-3.5 model summarized it accurately without hallucination.
 
 2. **Out-of-Domain Questions (Hallucination & Guardrails):**
-   - *Query:* "Bana çikolatalı kek tarifi verebilir misin?" / "Microsoft'un anlık hisse senedi değeri nedir?"
-   - *Result:* **PASS**. Thanks to Context-Collapse Protection, the system detected 0 relevant chunks and gracefully responded with: *"Bilmiyorum. (Veritabanında eşleşen hiçbir bilgi bulunamadı...)"*.
+   - *Query:* "Can you give me a chocolate cake recipe?" / "What is Microsoft's current stock price?"
+   - *Result:* **PASS**. Thanks to Context-Collapse Protection, the system detected 0 relevant chunks and gracefully responded with a safe fallback: *"I don't know. (No matching information found in the database...)"*.
 
 3. **Edge Cases (Query Rewriter & Parsing):**
-   - *Query:* "şey", " " (empty string), "ne?"
+   - *Query:* "thing", " " (empty string), "what?"
    - *Result:* **PASS**. The Query Rewriter safely ignored single-word non-contextual noise or returned the original string. The Hard-Stop mechanism correctly blocked generation due to lack of context.
 
 ## 🔌 Offline Proof (Zero Network)
