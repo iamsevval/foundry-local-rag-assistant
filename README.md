@@ -14,26 +14,31 @@ The system is designed to process highly classified documents for military and c
 ---
 
 ## 📑 Table of Contents
-1. [Key Features](#key-features)
-2. [Architecture](#architecture)
-3. [Security and Offline Proof](#security-and-offline-proof)
-4. [Quick Start](#quick-start)
-5. [Live Radar Integration](#live-radar-integration)
-6. [Headless API Mode](#headless-api-mode)
-7. [Test Results & Validation](#test-results--validation)
-8. [Troubleshooting & Limitations](#troubleshooting--limitations)
-9. [Documentation](#documentation)
+1. [Key Features](#-key-features)
+2. [Architecture & Stack](#️-architecture--stack)
+3. [Security and Offline Proof](#-security-and-offline-proof-zero-network)
+4. [Quick Start](#-quick-start)
+5. [Live Radar Integration](#-live-radar-integration-opensky)
+6. [Headless API Mode](#-headless-api-mode-microservice)
+7. [Test Results & Validation](#-test-results--validation)
+8. [Troubleshooting & Limitations](#-troubleshooting--limitations)
+9. [Documentation](#-documentation)
 
 ---
 
 ## 🚀 Key Features
 
 *   **Sensor Fusion (Live Radar):** Reads real-time altitude and velocity telemetry of actual aircraft and incorporates it into the LLM's decision-making process.
-*   **3D Knowledge Graph (Graph-RAG):** Extracts entities (people, projects, locations) from uploaded texts and builds interactive military intelligence networks using PyVis.
-*   **Advanced Hybrid Search (RRF):** Replaces legacy TF-IDF with the Reciprocal Rank Fusion algorithm, mathematically combining `FTS5` (Lexical) and `all-MiniLM-L6-v2` (Vector) searches.
-*   **Cross-Encoder Re-Ranking:** Re-scores the logical relevance of retrieved results to the user's question using a HuggingFace Cross-Encoder (`ms-marco-MiniLM-L-6-v2`), preventing hallucinations by up to 90%.
-*   **Microsoft Foundry Local:** Runs at maximum performance directly on local hardware (NPU/GPU) via the Microsoft SDK, completely eliminating the need for Docker or Ollama overhead.
+*   **Multi-Stage Retrieval Pipeline:**
+    *   **Query Rewriting:** Uses the local LLM (phi-3.5-mini) to dynamically rewrite incomplete user questions into standalone, searchable queries based on chat history.
+    *   **Advanced Hybrid Search (RRF):** Replaces legacy TF-IDF with Reciprocal Rank Fusion, mathematically combining `FTS5` (Lexical) and `all-MiniLM-L6-v2` (Vector) searches.
+    *   **Cross-Encoder Re-Ranking:** Re-scores logical relevance using a HuggingFace Cross-Encoder (`ms-marco-MiniLM-L-6-v2`), preventing hallucinations by up to 90%.
+*   **3D Knowledge Graph (Graph-RAG):** Extracts entities (people, projects, locations) from uploaded texts and builds interactive, physics-based military intelligence networks using PyVis.
+*   **Microsoft Foundry Local (Cross-Platform):** Runs at maximum performance directly on local hardware. Automatically detects your device's hardware and selects the best execution provider (CPU/GPU/NPU selection on Windows, Mac, and Linux) without Docker overhead.
+*   **Prompt Engineering & Semantic Reasoning:** Implements "Chain of Thought" (CoT) system prompting to give smaller models powerful logical deduction capabilities.
 *   **Context-Collapse Protection:** The system intelligently short-circuits LLM generation if no relevant documents are found, preventing edge-case hallucinations.
+*   **Dynamic Database Management:** Delete the entire database or drop specific files instantly directly from the UI.
+*   **Streaming UI:** Watch the AI type out its tactical answers in real-time using a modern Streamlit interface, complete with expandable source citations.
 
 ---
 
