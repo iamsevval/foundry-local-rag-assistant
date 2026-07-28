@@ -38,6 +38,7 @@ The system is designed to process highly classified documents for military and c
 *   **Prompt Engineering & Semantic Reasoning:** Implements "Chain of Thought" (CoT) system prompting to give smaller models powerful logical deduction capabilities.
 *   **Context-Collapse Protection:** The system intelligently short-circuits LLM generation if no relevant documents are found, preventing edge-case hallucinations.
 *   **Dynamic Database Management:** Delete the entire database or drop specific files instantly directly from the UI.
+*   **Automated Unit Testing (pytest):** Enterprise-grade test coverage for document processing and vector database initialization, ensuring rock-solid stability.
 *   **Streaming UI:** Watch the AI type out its tactical answers in real-time using a modern Streamlit interface, complete with expandable source citations.
 
 ---
@@ -121,6 +122,12 @@ python scripts/init_db.py
 python -m streamlit run app.py
 ```
 You can access the ARES Tactical Terminal by navigating to `http://localhost:8501` in your browser.
+
+### 4. Using the App
+- **Upload:** Upload a PDF or TXT file via the sidebar.
+- **Index:** Wait for the Hybrid Indexing and Graph Extraction process to complete.
+- **Chat Tab:** Ask follow-up questions and watch the AI dynamically rewrite them, retrieve hybrid context, re-rank it, and stream the answer.
+- **Graph Tab:** Explore the interactive knowledge graph to visually understand the entities and relationships discovered in your documents.
 
 ---
 
