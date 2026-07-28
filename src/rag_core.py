@@ -90,7 +90,11 @@ def extract_entities_from_chunk(chunk: str, file_name: str):
         end_idx = output.rfind("]")
         if start_idx != -1 and end_idx != -1:
             json_str = output[start_idx:end_idx+1]
-            edges = json.loads(json_str)
+            
+            # Clean up potential invalid control characters (optional, strict=False usually handles it)
+            json_str = json_str.replace('\n', ' ').replace('\r', '')
+            
+            edges = json.loads(json_str, strict=False)
             if isinstance(edges, list):
                 vector_db.insert_graph_edges(edges, file_name)
     except Exception as e:
@@ -98,32 +102,42 @@ def extract_entities_from_chunk(chunk: str, file_name: str):
 
 def rewrite_query(messages, original_query: str) -> str:
     """Sohbet geçmişine bakarak bağlamı kopuk soruları tek bir anlamlı soruya dönüştürür."""
-    if len(messages) <= 1:
+    # Soru zaten yeterince uzun ve açıksa (bağlam kopuk değilse) hiç bozma.
+    if len(original_query.split()) >= 5:
+        return original_query
+        
+    # Sadece kullanıcı ve asistan mesajlarını say
+    chat_history = [m for m in messages if m["role"] != "system"]
+    if len(chat_history) <= 1:
         return original_query
         
     history_text = ""
-    for m in messages[:-1]:
+    for m in chat_history[:-1][-3:]: # Sadece son 3 mesaja bak
         role = "Kullanıcı" if m["role"] == "user" else "Asistan"
         history_text += f"{role}: {m['content']}\n"
         
     system_prompt = (
-        "Sen bir metin düzenleyicisin. Görevin, kullanıcının eksik sorusunu geçmişe bakarak dilbilgisi düzgün tek bir Türkçe soruya çevirmektir. "
-        "Örnek: 'Peki o ne zaman bitti?' -> 'DermaSmart projesi ne zaman bitti?' "
-        "SADECE düzeltilmiş soruyu yaz. 'eleştrom' gibi uydurma kelimeler kullanma."
+        "Sen bir metin düzenleyicisin. Görevin, kullanıcının kısa ve eksik sorusunu geçmişe bakarak tek bir Türkçe soruya çevirmektir. "
+        "Eğer soru zaten tam ve anlaşılırsa HİÇ DEĞİŞTİRMEDEN aynen geri ver. "
+        "Asla uydurma kelime ekleme, asla cevap verme, sadece soruyu düzelt."
     )
     
     user_prompt = f"Geçmiş:\n{history_text}\n\nOrijinal Soru: {original_query}\n\nSadece Düzeltilmiş Soru:"
     
-    client = _chat_model.get_chat_client()
-    response = client.complete_chat([
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_prompt}
-    ])
-    
-    rewritten = response.choices[0].message.content.strip()
-    if len(rewritten) > 150:
+    try:
+        client = _chat_model.get_chat_client()
+        response = client.complete_chat([
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ])
+        
+        rewritten = response.choices[0].message.content.strip()
+        # Eğer yapay zeka saçmaladıysa veya çok uzun bir şey yazdıysa orijinali koru
+        if len(rewritten) > 150 or len(rewritten) < 3 or "eleştrom" in rewritten:
+            return original_query
+        return rewritten
+    except Exception:
         return original_query
-    return rewritten
 
 def retrieve_context(messages, original_query: str, top_k: int = 3):
     """Soruya en uygun parçaları Hem Kelime Hem Vektör (Hibrit) aramasıyla ve Cross-Encoder sıralamasıyla getirir."""
