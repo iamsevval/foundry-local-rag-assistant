@@ -2,6 +2,34 @@
 
 This document outlines the technical infrastructure and data flow architecture of the ARES system. The system design is built upon operating in **"Zero-Network" (Air-Gapped)** environments ensuring maximum data security, while fusing real-time telemetry data from external sensors with local artificial intelligence (Sensor Fusion).
 
+```mermaid
+graph TD
+    User([User]) -->|Asks Question| UI[Streamlit HUD]
+    User -->|Uploads PDF| UI
+    
+    UI -->|PDF Document| DP[Document Processor]
+    DP -->|Chunks & Entities| VDB[(SQLite Vector DB)]
+    
+    UI -->|Query| RAG[RAG Core Engine]
+    
+    subgraph "Sensor Fusion"
+    Radar[OpenSky ADS-B API] -->|Live Telemetry| RAG
+    end
+    
+    subgraph "Retrieval Pipeline"
+    RAG -->|Hybrid Search| VDB
+    VDB -->|Top 20 Chunks| RAG
+    RAG -->|Cross-Encoder Re-Ranking| ReRank[HuggingFace Re-Ranker]
+    ReRank -->|Top 5 Chunks| RAG
+    end
+    
+    RAG -->|Context + Query + Radar| LLM[Microsoft Foundry Local: Phi-3.5]
+    LLM -->|Generated Tactical Answer| UI
+    
+    VDB -->|Graph Data| PyVis[PyVis 3D Graph]
+    PyVis -.-> UI
+```
+
 ## 1. Core Components
 
 The system architecture consists of 3 main layers:

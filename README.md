@@ -44,6 +44,34 @@ The system is designed to process highly classified documents for military and c
 
 ## 🏛️ Architecture & Stack
 
+```mermaid
+graph TD
+    User([User]) -->|Asks Question| UI[Streamlit HUD]
+    User -->|Uploads PDF| UI
+    
+    UI -->|PDF Document| DP[Document Processor]
+    DP -->|Chunks & Entities| VDB[(SQLite Vector DB)]
+    
+    UI -->|Query| RAG[RAG Core Engine]
+    
+    subgraph "Sensor Fusion"
+    Radar[OpenSky ADS-B API] -->|Live Telemetry| RAG
+    end
+    
+    subgraph "Retrieval Pipeline"
+    RAG -->|Hybrid Search| VDB
+    VDB -->|Top 20 Chunks| RAG
+    RAG -->|Cross-Encoder Re-Ranking| ReRank[HuggingFace Re-Ranker]
+    ReRank -->|Top 5 Chunks| RAG
+    end
+    
+    RAG -->|Context + Query + Radar| LLM[Microsoft Foundry Local: Phi-3.5]
+    LLM -->|Generated Tactical Answer| UI
+    
+    VDB -->|Graph Data| PyVis[PyVis 3D Graph]
+    PyVis -.-> UI
+```
+
 *   **LLM Runtime:** Microsoft Foundry Local SDK (phi-3.5-mini)
 *   **Embedding Model:** Sentence-Transformers (all-MiniLM-L6-v2)
 *   **Re-Ranking Model:** Sentence-Transformers (cross-encoder/ms-marco-MiniLM-L-6-v2)
