@@ -12,6 +12,9 @@ This project is a fully local, privacy-first, **Advanced Retrieval-Augmented Gen
 - **Knowledge Graph Extraction (Graph-RAG):**
   - Analyzes documents upon upload using the local LLM to extract entities (people, projects, technologies) and their semantic relationships.
   - Generates interactive, 3D, physics-based network graphs (via PyVis & NetworkX) mapping out the conceptual architecture of your data.
+- **📡 Live Radar Telemetry Integration:**
+  - Connects to the OpenSky ADS-B network to fetch real-time flight telemetry (altitude, speed, callsign).
+  - Fuses live hardware/sensor data with the local PDF knowledge base, allowing the AI to make tactical decisions based on both written manuals and live events (Ideal for UAV/Defense workflows).
 - **Multi-Stage Retrieval Pipeline:**
   1. **Query Rewriting:** Uses the local LLM (`phi-3.5-mini`) to dynamically rewrite incomplete or contextless user questions into standalone, searchable queries based on chat history.
   2. **Advanced Hybrid Search (RRF):** Combines standard semantic Vector Search (`sqlite-vec` + `all-MiniLM-L6-v2`) with exact keyword matching via SQLite's Full-Text Search (`FTS5`). Results are intelligently merged using Reciprocal Rank Fusion (RRF).
@@ -19,6 +22,7 @@ This project is a fully local, privacy-first, **Advanced Retrieval-Augmented Gen
 - **Prompt Engineering & Semantic Reasoning:** Implements "Chain of Thought" (CoT) system prompting to give smaller models (like Phi-3.5) powerful logical deduction capabilities, linking synonyms (e.g., "crisis" = "setback") while strictly preventing hallucinations.
 - **Context-Collapse Protection:** The system intelligently short-circuits LLM generation if no relevant documents are found, preventing edge-case hallucinations.
 - **Dynamic Database Management:** Delete the entire database or drop specific files instantly directly from the UI.
+- **Automated Unit Testing (`pytest`):** Enterprise-grade test coverage for document processing and vector database initialization, ensuring rock-solid stability.
 - **Streaming UI:** Watch the AI type out its answers in real-time using a modern **Streamlit** interface, complete with expandable source citations, re-rank scores, and an interactive Graph tab.
 
 ## 🏗 Architecture & Stack
@@ -102,6 +106,19 @@ This project strictly adheres to the **"Zero Network Calls"** philosophy.
 ## ⚠️ Limitations
 - **Supported File Types:** Currently limited to `.pdf`, `.docx`, and `.txt`.
 - **Performance Constraints:** Processing extremely large documents (e.g., 500+ pages) may take several minutes depending on your device's local CPU/GPU/NPU speed, as embedding and entity extraction run purely locally.
+
+## 🚀 Headless API Mode (Microservice)
+Want to integrate this RAG engine into a Mobile App (React Native, Flutter) or a Web App (Next.js, Vue)? You can run the system in **Headless API Mode** using FastAPI. This bypasses the Streamlit UI and exposes the engine as a REST API.
+
+1. Start the API Server:
+```bash
+uvicorn api:app --reload --port 8000
+```
+2. **Interactive API Docs:** Navigate to `http://localhost:8000/docs` to see the auto-generated Swagger UI.
+3. **Endpoints:**
+   - `GET /health` : Check engine status.
+   - `POST /upload` : Upload PDF/TXT files to be indexed.
+   - `POST /query` : Send a JSON payload `{"query": "your question"}` and receive the AI's answer and sources in JSON.
 
 ## 📌 Troubleshooting
 - **ModuleNotFoundError:** Ensure you are running the `python -m streamlit` command from *within* your activated `venv` after running `pip install -r requirements.txt`.

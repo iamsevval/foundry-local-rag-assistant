@@ -6,3 +6,8 @@ streamlit
 pypdf
 python-docx
 sqlite-vec
+pytest
+fastapi
+uvicorn
+python-multipart
+requests

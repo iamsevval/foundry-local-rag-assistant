@@ -4,8 +4,8 @@ os.environ["TRANSFORMERS_OFFLINE"] = "1"
 # pyrefly: ignore [missing-import]
 from foundry_local_sdk import Configuration, FoundryLocalManager
 from sentence_transformers import SentenceTransformer, CrossEncoder
-import vector_db
-import document_processor
+from src import vector_db
+from src import document_processor
 import json
 
 _chat_model = None

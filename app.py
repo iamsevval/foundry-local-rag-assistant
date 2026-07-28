@@ -1,16 +1,39 @@
 # pyrefly: ignore [missing-import]
 import streamlit as st
 import os
-import rag_core
 import tempfile
 from pyvis.network import Network
 import streamlit.components.v1 as components
-import vector_db
+from src import rag_core
+from src import vector_db
+from src import radar_sensor
 
-st.set_page_config(page_title="RAG Asistanı", page_icon="🤖", layout="wide")
+st.set_page_config(page_title="ARES Taktik Terminali", page_icon="🦅", layout="wide")
 
-st.title("🤖 Yerel Hibrit RAG Asistanı")
-st.caption("Verileriniz %100 cihazınızda kalır.")
+# Custom CSS for Military/Tactical Vibe
+st.markdown("""
+    <style>
+    /* Glowing effect for the main title */
+    .stApp h1 {
+        color: #00ff00 !important;
+        text-shadow: 0 0 10px #00ff00;
+        font-family: 'Courier New', Courier, monospace;
+    }
+    /* Matrix-like green for success messages */
+    .st-emotion-cache-1cvow4s {
+        background-color: rgba(0, 255, 0, 0.1) !important;
+        border: 1px solid #00ff00 !important;
+    }
+    /* Subtle border for chat messages */
+    .stChatMessage {
+        border-left: 2px solid #00ff00;
+        padding-left: 10px;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+st.title("🦅 ARES: Taktik İstihbarat Terminali")
+st.caption("MİMARİ: Zero-Network (Çevrimdışı) | SENSÖR FÜZYONU: Aktif | İŞLEME: On-Device (%100 Yerel)")
 
 # Sohbet Geçmişi (Memory) Başlatma
 if "messages" not in st.session_state:
@@ -18,7 +41,7 @@ if "messages" not in st.session_state:
 
 # Yan menü: PDF yükleme, Ayarlar, Veritabanı Yönetimi
 with st.sidebar:
-    st.header("📂 Dosya Yükle")
+    st.header("📂 Veri Girişi (Yükleme)")
     uploaded_file = st.file_uploader("PDF, DOCX veya TXT seçin", type=["pdf", "docx", "txt"])
     
     if st.button("Veritabanına Ekle"):
@@ -46,12 +69,33 @@ with st.sidebar:
 
     st.divider()
     
-    st.header("🎭 Asistan Karakteri")
+    st.header("🎭 Karargah Komutu (Persona)")
     persona_input = st.text_area(
         "Modelin nasıl davranmasını istiyorsunuz?", 
         value="Sen anlamsal çıkarım (semantic reasoning) yeteneği yüksek bir AI asistanısın. Kullanıcının sorusunu cevaplamadan önce BAĞLAM metnini adım adım analiz et. Kavramları eşleştir (örneğin 'kriz', 'aksaklık' veya 'problem' benzer şeylerdir). Metinde olmayan isimleri/olayları ASLA uydurma, ancak var olan bilgileri eşanlamlılarıyla mantıklı bir şekilde yorumla. Cevap bağlamda yoksa 'Bilmiyorum' de.",
         height=150
     )
+
+    st.divider()
+    
+    st.header("📡 UAV Radar Telemetry")
+    radar_active = st.toggle("Canlı Radara Bağlan (OpenSky)")
+    
+    if radar_active:
+        with st.spinner("Uçuş verileri aranıyor..."):
+            radar_data = radar_sensor.get_live_radar_data()
+            if radar_data["status"] == "active":
+                st.success("✅ Bağlantı Kuruldu")
+                st.metric(label="Callsign (Kod)", value=radar_data["callsign"])
+                st.metric(label="İrtifa (Yükseklik)", value=f"{radar_data['altitude_m']} m")
+                st.metric(label="Hız", value=f"{radar_data['velocity_ms']} m/s")
+                st.caption(f"Ülke: {radar_data['country']} | {radar_data['timestamp']}")
+                st.session_state.radar_context = radar_data
+            else:
+                st.warning(radar_data["message"])
+                st.session_state.radar_context = None
+    else:
+        st.session_state.radar_context = None
 
     st.divider()
 
@@ -89,7 +133,7 @@ with st.sidebar:
             st.success("Tüm indeksler silindi!")
             st.rerun()
 
-tab_chat, tab_graph = st.tabs(["💬 Sohbet", "🕸️ Bilgi Grafiği (Graph-RAG)"])
+tab_chat, tab_graph = st.tabs(["📡 Taktik Haberleşme (Chat)", "🕸️ İstihbarat Ağı (Graph-RAG)"])
 
 with tab_chat:
     # Önceki mesajları ekranda göster
@@ -129,11 +173,15 @@ with tab_chat:
         for i, r in enumerate(results):
             context_str += f"[KAYNAK {i+1} - {r['source']}]: {r['content']}\n\n"
             
+        radar_context = st.session_state.get("radar_context")
+        if radar_context and radar_context.get("status") == "active":
+            context_str += f"\n\n[CANLI RADAR SENSÖR VERİSİ]: Hedef Uçak Kodu: {radar_context['callsign']}, İrtifa: {radar_context['altitude_m']}m, Hız: {radar_context['velocity_ms']}m/s\n\n"
+            
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
             full_response = ""
             
-            if not results:
+            if not results and not radar_context:
                 full_response = "Bilmiyorum. (Veritabanında eşleşen hiçbir bilgi bulunamadı veya hiç dosya yüklemediniz.)"
                 message_placeholder.markdown(full_response)
             else:

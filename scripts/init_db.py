@@ -5,7 +5,7 @@ DB_NAME = 'rag_store.db'
 
 def init_db():
     # Şema dosyasını oku
-    with open('schema.sql', 'r') as f:
+    with open('src/schema.sql', 'r') as f:
         schema = f.read()
 
     # Veritabanına bağlan (dosya yoksa oluşturur)
