@@ -44,7 +44,19 @@ def get_live_radar_data():
         else:
             return {"status": "error", "message": f"Radar bağlantı hatası: {response.status_code}"}
     except Exception as e:
-        return {"status": "error", "message": f"Sensör okuma hatası: {str(e)}"}
+        # [ARES SUNUM KORUMASI - AIR GAPPED MOD]
+        # İnternet kesildiğinde veya herhangi bir API hatasında sistem çökmez, yerel simülatöre geçer.
+        return {
+            "status": "active",
+            "callsign": "TCT-SIM-01 (OFFLINE MOD)",
+            "country": "Turkey (Simulated)",
+            "altitude_m": 1249.68,
+            "velocity_ms": 136.87,
+            "heading_deg": 180,
+            "lat": 41.0,
+            "lon": 29.0,
+            "timestamp": time.strftime("%H:%M:%S")
+        }
 
 if __name__ == "__main__":
     # Test
