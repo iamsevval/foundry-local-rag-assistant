@@ -5,6 +5,8 @@
 ![Zero Network](https://img.shields.io/badge/Privacy-Zero_Network-red.svg)
 ![License](https://img.shields.io/badge/License-MIT-gray.svg)
 
+📺 **[Watch the Live Demo & Presentation Video](https://www.youtube.com/watch?v=5LFavXw_sUg)**
+
 ARES is a **zero-network (air-gapped)**, completely On-Device Tactical Intelligence and RAG (Retrieval-Augmented Generation) system featuring sensor fusion capabilities, developed as part of the Microsoft AI Innovators internship program.
 
 The system is designed to process highly classified documents for military and closed corporate (Air-Gapped) environments. It doesn't just read documents; it connects to the **OpenSky ADS-B Network** to fetch real-time radar telemetry of actual aircraft in the sky and injects it directly into the AI's context.
@@ -131,11 +133,14 @@ You can access the ARES Tactical Terminal by navigating to `http://localhost:850
 
 ---
 
-## 📡 Live Radar Integration (OpenSky)
+## 📡 Sensor Fusion: Live Radar & Offline Simulator
 
-When you activate the **"Connect to Live Radar"** switch from the left menu, the system connects to the legal and free OpenSky ADS-B network via the `src/radar_sensor.py` module. It begins fetching real-time aircraft telemetry (e.g., in your region) every second.
+When you activate the **"Connect to Live Radar"** switch from the left menu, the system attempts to connect to the legal and free OpenSky ADS-B network via the `src/radar_sensor.py` module. It begins fetching real-time aircraft telemetry (e.g., altitude, velocity) in your region.
 
 *Example Question:* "What is the speed of the aircraft on the radar, and according to the manual, is it safe to perform maneuvers at this speed?"
+
+**[ARES SUNUM KORUMASI] Offline Tactical Simulator (Air-Gapped Mode):**
+In strict military or closed-network (Zero-Network) environments, or if the API connection drops, the system **will not crash**. It automatically intercepts the network failure and transitions into **"TCT-SIM-01 (OFFLINE MOD)"**, injecting simulated tactical telemetry into the LLM context. This allows you to demo the reasoning capabilities of the system even with the Wi-Fi physically disconnected!
 
 ---
 
